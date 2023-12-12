@@ -1,11 +1,16 @@
-FROM golang:1.21
+FROM golang:1.21 AS builder
 
-WORKDIR /usr/src/app
-
-COPY go.mod go.sum ./
-RUN go mod download && go mod verify
+WORKDIR /app
 
 COPY . .
-RUN go build -v -o /usr/local/bin/app ./...
+RUN go build -o /app/main main.go
 
-CMD ["app"]
+FROM alpine:edge
+WORKDIR /app
+
+RUN apk add --no-cache libc6-compat
+
+COPY --from=builder /app/main /app/main
+COPY ./images /app/images
+
+CMD ["/app/main"]
